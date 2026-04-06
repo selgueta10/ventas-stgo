@@ -66,17 +66,17 @@
         <div id="carrito-contenedor" class="bg-white p-4 rounded-3xl space-y-3 shadow-sm min-h-[100px]"></div>
         <div class="space-y-3">
             <input id="nombre-cliente" type="text" placeholder="Nombre del Cliente" class="w-full h-14 px-4 bg-white rounded-2xl border-none shadow-sm outline-none">
-            <input id="costo-delivery-input" type="number" placeholder="Costo Delivery / Envío ($)" class="w-full h-14 px-4 bg-white rounded-2xl border-none shadow-sm outline-none">
+            <input id="costo-delivery-input" type="number" placeholder="Costo Envío ($)" class="w-full h-14 px-4 bg-white rounded-2xl border-none shadow-sm outline-none">
             
             <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm space-y-3">
                 <div class="flex justify-between items-center">
                     <p class="text-[10px] font-bold uppercase text-gray-400">¿Hago yo el reparto?</p>
-                    <input type="checkbox" id="check-hago-reparto" class="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary">
+                    <input type="checkbox" id="check-hago-reparto" class="w-5 h-5 rounded border-gray-300 text-primary">
                 </div>
                 <input id="direccion-cliente-input" type="text" placeholder="Dirección para la Ruta" class="w-full h-12 px-4 bg-gray-50 rounded-xl border-none text-sm outline-none">
             </div>
 
-            <button onclick="confirmarVenta()" class="w-full py-4 bg-primary text-white font-bold text-lg rounded-2xl shadow-lg active:scale-95 transition-transform">Confirmar Venta</button>
+            <button onclick="confirmarVenta()" class="w-full py-4 bg-primary text-white font-bold text-lg rounded-2xl shadow-lg">Confirmar Venta</button>
         </div>
     </main>
 
@@ -85,7 +85,6 @@
             <h1 class="text-4xl font-extrabold tracking-tight">Mi Ruta</h1>
             <button onclick="vaciarRuta()" class="text-red-500 text-xs font-bold uppercase mt-2">Limpiar</button>
         </div>
-        <p class="text-xs text-gray-500 mb-6">Ordena tus paradas y navega con Waze paso a paso.</p>
         <div id="lista-ruta-maestra" class="space-y-4"></div>
         <div id="ruta-vacia-msg" class="text-center py-20 opacity-20">
             <span class="material-symbols-outlined text-7xl">route</span>
@@ -94,7 +93,7 @@
     </main>
 
     <main id="view-historial" class="pt-24 px-6 max-w-lg mx-auto hidden">
-        <h1 class="text-4xl font-extrabold tracking-tight mb-4 text-[#191c1e]">Historial</h1>
+        <h1 class="text-4xl font-extrabold tracking-tight mb-4">Historial</h1>
         <div id="resumen-total-historial" class="mb-6 text-primary font-black text-xl"></div>
         <div id="lista-historial" class="space-y-3"></div>
     </main>
@@ -116,18 +115,15 @@
             <div id="modal-lista-productos" class="space-y-2 border-b pb-4 mb-4 mt-2 text-sm"></div>
             <div id="modal-panel-logistica" class="bg-gray-50 p-4 rounded-2xl mb-4 space-y-2 hidden">
                 <p class="text-[10px] font-bold uppercase text-outline">Información de Reparto</p>
-                <div class="flex items-center gap-2 text-xs font-bold text-on-surface"><span class="material-symbols-outlined text-[16px] text-primary">location_on</span><span id="modal-reparto-dir" class="truncate">---</span></div>
+                <div class="flex items-center gap-2 text-xs font-bold"><span class="material-symbols-outlined text-[16px] text-primary">location_on</span><span id="modal-reparto-dir"></span></div>
                 <div id="modal-mapa" class="w-full h-32 bg-gray-200 rounded-xl overflow-hidden mt-2"></div>
                 <button id="btn-waze-modal" class="w-full py-3 bg-[#33ccff] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 mt-2"><span class="material-symbols-outlined text-[16px]">navigation</span> Abrir Waze</button>
             </div>
-            <div class="flex justify-between items-end border-b pb-4 mb-4">
-                <div id="modal-detalle-financiero" class="space-y-1 text-xs w-2/3"></div>
-                <button onclick="editarLogisticaActual()" class="text-primary font-bold text-[10px] uppercase underline bg-primary/5 px-2 py-1 rounded-lg">Editar</button>
-            </div>
+            <div id="modal-detalle-financiero" class="space-y-1 mb-4 text-xs border-b pb-4"></div>
             <div class="flex justify-between items-center">
                 <button onclick="eliminarVentaActual()" class="text-error font-bold text-xs">Eliminar</button>
                 <button onclick="compartirPorWhatsApp()" class="bg-[#25D366] text-white px-4 py-2 rounded-xl font-bold text-xs">WhatsApp</button>
-                <div class="text-right"><span class="text-[10px] font-bold uppercase block text-outline">Total</span><span class="text-3xl font-extrabold text-primary" id="modal-total"></span></div>
+                <div class="text-right"><span class="text-xs font-bold block opacity-40">Total</span><span class="text-3xl font-extrabold text-primary" id="modal-total"></span></div>
             </div>
         </div>
     </div>
@@ -154,22 +150,86 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        let catalogoApp = [], carrito = [], historialVentas = [], rutaActiva = JSON.parse(localStorage.getItem('rutaActiva_V2')) || [], idVentaAbierta = null;
+        let catalogoApp = [], carrito = [], historialVentas = [], idVentaAbierta = null;
+        let rutaActiva = JSON.parse(localStorage.getItem('rutaActiva_V2')) || [];
 
         function inicializarApp() {
+            // Sincronizar Catálogo
             db.collection("productos").orderBy("nombre").onSnapshot(s => {
                 catalogoApp = []; s.forEach(doc => catalogoApp.push(doc.data()));
                 renderizarCatalogo();
+                renderizarDashboard(); // Recalcular con costos frescos
             });
+
+            // Sincronizar Ventas
             db.collection("ventas").orderBy("idVenta", "desc").onSnapshot(snap => {
                 historialVentas = []; snap.forEach(doc => historialVentas.push(doc.data()));
                 renderizarHistorial();
                 renderizarDashboard();
-                if(idVentaAbierta) abrirModal(idVentaAbierta);
             });
         }
 
-        // --- HISTORIAL Y DETALLE ---
+        // --- DASHBOARD CALCULOS ---
+        function renderizarDashboard() {
+            const sel = document.getElementById('dash-mes');
+            const meses = [...new Set(historialVentas.map(v => v.fechaIso.substring(0,7)))].sort().reverse();
+            if(sel.innerHTML == "" && meses.length) sel.innerHTML = meses.map(m => `<option value="${m}">${m}</option>`).join('');
+            
+            const mSel = sel.value;
+            const filtradas = historialVentas.filter(v => v.fechaIso.startsWith(mSel));
+            
+            let totalVenta = 0, totalCosto = 0, totalDeliv = 0;
+
+            filtradas.forEach(v => {
+                totalVenta += v.total;
+                totalDeliv += (v.costoDelivery || 0);
+                v.items.forEach(it => {
+                    let p = catalogoApp.find(cp => cp.nombre === it.nombre);
+                    totalCosto += ((p ? p.costo : 0) * it.cantidad);
+                });
+            });
+
+            const gananciaNeta = totalVenta - totalCosto - totalDeliv;
+
+            document.getElementById('dash-summary').innerHTML = `
+                <div class="col-span-2 bg-primary p-6 rounded-3xl text-white shadow-xl">
+                    <p class="text-xs opacity-70 uppercase font-bold">Ventas Totales</p>
+                    <p class="text-4xl font-black">${fmt(totalVenta)}</p>
+                </div>
+                <div class="bg-white p-4 rounded-3xl shadow-sm">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase">Costo Mercadería</p>
+                    <p class="text-lg font-bold">${fmt(totalCosto)}</p>
+                </div>
+                <div class="bg-white p-4 rounded-3xl shadow-sm">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase">Costo Delivery</p>
+                    <p class="text-lg font-bold">${fmt(totalDeliv)}</p>
+                </div>
+                <div class="col-span-2 bg-secondary p-5 rounded-3xl text-white shadow-lg flex justify-between items-center">
+                    <span class="font-bold">Utilidad Real</span>
+                    <span class="text-2xl font-black">${fmt(gananciaNeta)}</span>
+                </div>
+            `;
+        }
+
+        // --- HISTORIAL ---
+        function renderizarHistorial() {
+            const cont = document.getElementById('lista-historial');
+            cont.innerHTML = historialVentas.map(v => `
+                <div onclick="abrirModal(${v.idVenta})" class="bg-white p-4 rounded-3xl shadow-sm flex justify-between items-center border-l-4 border-primary active:scale-[0.98] transition-transform">
+                    <div class="flex-grow">
+                        <p class="font-bold text-sm">${v.cliente}</p>
+                        <p class="text-[10px] text-gray-400 font-bold uppercase">${v.fechaStr}</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <p class="font-black text-primary text-sm">${fmt(v.total)}</p>
+                        <button onclick="agregarARuta(event, ${v.idVenta})" class="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center shadow-md">
+                            <span class="material-symbols-outlined text-[18px]">add_road</span>
+                        </button>
+                    </div>
+                </div>`).join('');
+            document.getElementById('resumen-total-historial').innerText = "Ventas: " + fmt(historialVentas.reduce((s,v) => s+v.total,0));
+        }
+
         function abrirModal(id) {
             const v = historialVentas.find(x => x.idVenta == id); if(!v) return;
             idVentaAbierta = id;
@@ -180,16 +240,16 @@
             let hIt = ''; v.items.forEach(it => hIt += `<div class="flex justify-between py-1"><span>${it.cantidad}x ${it.nombre}</span><b>${fmt(it.venta * it.cantidad)}</b></div>`);
             document.getElementById('modal-lista-productos').innerHTML = hIt;
             
-            const costP = v.items.reduce((s, it) => {
+            let costP = v.items.reduce((s, it) => {
                 let p = catalogoApp.find(cp => cp.nombre === it.nombre);
                 return s + ((p ? p.costo : 0) * it.cantidad);
             }, 0);
-            const gan = v.total - costP - (v.costoDelivery || 0);
 
             document.getElementById('modal-detalle-financiero').innerHTML = `
-                <div class="flex justify-between"><span>Costo Prod:</span><span>${fmt(costP)}</span></div>
-                <div class="flex justify-between"><span>Delivery:</span><span>${fmt(v.costoDelivery)}</span></div>
-                <div class="flex justify-between font-bold text-secondary border-t mt-1 pt-1"><span>Ganancia:</span><span>${fmt(gan)}</span></div>`;
+                <div class="flex justify-between"><span>Costo Productos:</span><span>${fmt(costP)}</span></div>
+                <div class="flex justify-between"><span>Delivery:</span><span>${fmt(v.costoDelivery || 0)}</span></div>
+                <div class="flex justify-between font-bold text-secondary border-t mt-1 pt-1"><span>Ganancia Venta:</span><span>${fmt(v.total - costP - (v.costoDelivery || 0))}</span></div>
+            `;
 
             const panel = document.getElementById('modal-panel-logistica');
             if (v.direccion) {
@@ -202,40 +262,26 @@
             const m = document.getElementById('modal-detalle'); m.classList.remove('hidden'); setTimeout(() => m.classList.remove('opacity-0'), 10);
         }
 
-        function cerrarModal() { idVentaAbierta = null; const m = document.getElementById('modal-detalle'); m.classList.add('opacity-0'); setTimeout(() => m.classList.add('hidden'), 300); }
+        function cerrarModal() { const m = document.getElementById('modal-detalle'); m.classList.add('opacity-0'); setTimeout(() => m.classList.add('hidden'), 300); }
 
-        function editarLogisticaActual() {
-            const v = historialVentas.find(x => x.idVenta == idVentaAbierta);
-            let nDel = prompt("Costo de Delivery ($):", v.costoDelivery || 0);
-            if (nDel === null) return;
-            let nHagoReparto = confirm("¿Haces tú el reparto? (Aceptar=Sí / Cancelar=No)");
-            let nDir = "";
-            if(nHagoReparto) {
-                nDir = prompt("Dirección exacta:", v.direccion || "");
-                if (nDir === null) return;
-            }
-            db.collection("ventas").doc(idVentaAbierta.toString()).update({ costoDelivery: parseInt(nDel) || 0, hagoReparto: nHagoReparto, direccion: nDir });
-        }
+        function eliminarVentaActual() { if(confirm("¿Eliminar venta?")) db.collection("ventas").doc(idVentaAbierta.toString()).delete().then(cerrarModal); }
 
         function compartirPorWhatsApp() {
             const v = historialVentas.find(x => x.idVenta == idVentaAbierta);
             let msg = `*Detalle del Pedido*\n`; v.items.forEach(it => msg += `• ${it.cantidad}x ${it.nombre}: ${fmt(it.venta*it.cantidad)}\n`);
-            if(v.direccion) msg += `\n📍 *Entrega:* ${v.direccion}`;
-            msg += `\n\n*TOTAL: ${fmt(v.total)}*`;
+            msg += `\n*TOTAL: ${fmt(v.total)}*`;
             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
-        function eliminarVentaActual() { if(confirm("¿Eliminar esta venta para siempre?")) db.collection("ventas").doc(idVentaAbierta.toString()).delete().then(cerrarModal); }
-
         // --- RUTAS ---
         function agregarARuta(ev, idVenta) {
-            ev.stopPropagation();
+            ev.stopPropagation(); // CLAVE: No abre el modal al tocar el botón azul
             const v = historialVentas.find(x => x.idVenta == idVenta);
-            if (!v.direccion) return alert("Esta venta no tiene dirección. Edítala primero.");
+            if (!v.direccion) return alert("Falta dirección.");
             if (rutaActiva.find(r => r.idVenta == idVenta)) return alert("Ya está en ruta.");
             rutaActiva.push({ idVenta: v.idVenta, cliente: v.cliente, direccion: v.direccion, completado: false });
             localStorage.setItem('rutaActiva_V2', JSON.stringify(rutaActiva));
-            alert("Añadido a la ruta 🚚");
+            alert("Añadido 🚚");
         }
 
         function renderizarRuta() {
@@ -247,30 +293,45 @@
                 <div class="bg-white p-4 rounded-3xl shadow-sm border-l-8 ${r.completado ? 'border-gray-200 opacity-50' : 'border-primary'} flex flex-col gap-3">
                     <div class="flex justify-between items-center">
                         <div class="flex items-center gap-3"><span class="w-7 h-7 bg-blue-50 text-primary rounded-full flex items-center justify-center font-black text-xs">${i+1}</span>
-                        <div><p class="font-bold text-sm leading-none">${r.cliente}</p><p class="text-[9px] text-gray-400 font-bold uppercase truncate max-w-[150px]">${r.direccion}</p></div></div>
-                        <div class="flex gap-1"><button onclick="moverParada(${i},-1)" class="p-1 bg-gray-50 rounded">▲</button><button onclick="moverParada(${i},1)" class="p-1 bg-gray-50 rounded">▼</button></div>
+                        <div><p class="font-bold text-sm leading-none">${r.cliente}</p><p class="text-[9px] text-gray-400 font-bold truncate max-w-[150px]">${r.direccion}</p></div></div>
                     </div>
-                    <div class="flex gap-2"><button onclick="window.open('https://waze.com/ul?q=${encodeURIComponent(r.direccion)}&navigate=yes','_blank')" class="flex-grow py-3 bg-[#33ccff] text-white rounded-2xl font-bold text-xs flex items-center justify-center gap-2"><span class="material-symbols-outlined text-sm">navigation</span> Waze</button>
-                    <button onclick="toggleCompletado(${i})" class="w-12 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center"><span class="material-symbols-outlined">${r.completado ? 'undo' : 'check'}</span></button>
-                    <button onclick="quitarDeRuta(${i})" class="w-12 bg-red-50 text-red-400 rounded-2xl flex items-center justify-center"><span class="material-symbols-outlined">delete</span></button></div>
+                    <div class="flex gap-2">
+                        <button onclick="window.open('https://waze.com/ul?q=${encodeURIComponent(r.direccion)}&navigate=yes','_blank')" class="flex-grow py-3 bg-[#33ccff] text-white rounded-2xl font-bold text-xs flex items-center justify-center gap-2">Waze</button>
+                        <button onclick="toggleCompletado(${i})" class="w-12 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center"><span class="material-symbols-outlined">${r.completado ? 'undo' : 'check'}</span></button>
+                        <button onclick="quitarDeRuta(${i})" class="w-12 bg-red-50 text-red-400 rounded-2xl flex items-center justify-center"><span class="material-symbols-outlined">delete</span></button>
+                    </div>
                 </div>`).join('');
         }
-        function moverParada(i, d) { let n = i + d; if (n >= 0 && n < rutaActiva.length) { let t = rutaActiva[i]; rutaActiva[i] = rutaActiva[n]; rutaActiva[n] = t; localStorage.setItem('rutaActiva_V2', JSON.stringify(rutaActiva)); renderizarRuta(); } }
         function toggleCompletado(i) { rutaActiva[i].completado = !rutaActiva[i].completado; localStorage.setItem('rutaActiva_V2', JSON.stringify(rutaActiva)); renderizarRuta(); }
         function quitarDeRuta(i) { rutaActiva.splice(i, 1); localStorage.setItem('rutaActiva_V2', JSON.stringify(rutaActiva)); renderizarRuta(); }
-        function vaciarRuta() { if(confirm("¿Limpiar ruta?")) { rutaActiva = []; localStorage.removeItem('rutaActiva_V2'); renderizarRuta(); } }
+        function vaciarRuta() { if(confirm("¿Vaciar?")) { rutaActiva = []; localStorage.removeItem('rutaActiva_V2'); renderizarRuta(); } }
 
-        // --- CORE VENTAS ---
-        function renderizarHistorial() {
-            const cont = document.getElementById('lista-historial');
-            cont.innerHTML = historialVentas.map(v => `
-                <div onclick="abrirModal(${v.idVenta})" class="bg-white p-4 rounded-3xl shadow-sm flex justify-between items-center border-l-4 border-primary active:scale-[0.98] transition-transform">
-                    <div class="flex-grow"><p class="font-bold text-sm">${v.cliente}</p><p class="text-[10px] text-gray-400 font-bold uppercase tracking-tight">${v.fechaStr}</p></div>
-                    <div class="flex items-center gap-3"><p class="font-black text-primary text-sm">${fmt(v.total)}</p>
-                    <button onclick="agregarARuta(event, ${v.idVenta})" class="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center shadow-md"><span class="material-symbols-outlined text-[18px]">add_road</span></button></div>
+        // --- AUXILIARES ---
+        function renderizarCatalogo() {
+            document.getElementById('catalogo-grid').innerHTML = catalogoApp.map(p => `
+                <div class="bg-white p-4 rounded-3xl shadow-sm flex items-center gap-4">
+                    <div class="flex-grow"><h3 class="font-bold text-sm">${p.nombre}</h3><p class="text-primary font-black text-lg">${fmt(p.venta)}</p></div>
+                    <button onclick="addCarrito('${p.id}')" class="bg-blue-50 text-primary w-12 h-12 rounded-2xl flex items-center justify-center"><span class="material-symbols-outlined">add_shopping_cart</span></button>
                 </div>`).join('');
-            document.getElementById('resumen-total-historial').innerText = "Ventas: " + fmt(historialVentas.reduce((s,v) => s+v.total,0));
         }
+
+        function addCarrito(id) {
+            const p = catalogoApp.find(x => x.id === id);
+            const it = carrito.find(x => x.id === id);
+            if (it) it.can++; else carrito.push({ ...p, can: 1 });
+            renderCarrito();
+        }
+
+        function renderCarrito() {
+            const cont = document.getElementById('carrito-contenedor'), totalT = document.getElementById('total-venta-en-curso');
+            if (carrito.length === 0) { cont.innerHTML = '<p class="text-center py-4 text-gray-300">Selecciona productos...</p>'; totalT.innerText = '$ 0'; return; }
+            cont.innerHTML = carrito.map((it, i) => `
+                <div class="flex justify-between items-center bg-gray-50 p-2 rounded-2xl"><span class="text-xs truncate w-1/2">${it.nombre}</span>
+                <div class="flex items-center gap-2"><button onclick="modCarrito(${i},-1)" class="w-8 h-8 rounded-full border">-</button><b>${it.can}</b><button onclick="modCarrito(${i},1)" class="w-8 h-8 rounded-full bg-primary text-white">+</button></div></div>`).join('');
+            totalT.innerText = fmt(carrito.reduce((s, it) => s + (it.venta * it.can), 0));
+        }
+
+        function modCarrito(i, d) { carrito[i].can += d; if(carrito[i].can<=0) carrito.splice(i,1); renderCarrito(); }
 
         function confirmarVenta() {
             if (carrito.length === 0) return;
@@ -294,38 +355,8 @@
             });
         }
 
-        // Funciones auxiliares
-        function renderizarCatalogo() {
-            document.getElementById('catalogo-grid').innerHTML = catalogoApp.map(p => `
-                <div class="bg-white p-4 rounded-3xl shadow-sm flex items-center gap-4">
-                    <div class="flex-grow"><h3 class="font-bold text-sm">${p.nombre}</h3><p class="text-primary font-black text-lg">${fmt(p.venta)}</p></div>
-                    <button onclick="addCarrito('${p.id}')" class="bg-blue-50 text-primary w-12 h-12 rounded-2xl flex items-center justify-center"><span class="material-symbols-outlined">add_shopping_cart</span></button>
-                </div>`).join('');
-        }
-        function addCarrito(id) {
-            const p = catalogoApp.find(x => x.id === id);
-            const it = carrito.find(x => x.id === id);
-            if (it) it.can++; else carrito.push({ ...p, can: 1 });
-            renderCarrito();
-        }
-        function renderCarrito() {
-            const cont = document.getElementById('carrito-contenedor');
-            const totalT = document.getElementById('total-venta-en-curso');
-            if (carrito.length === 0) { cont.innerHTML = '<p class="text-center py-4 text-gray-300">Selecciona productos...</p>'; totalT.innerText = '$ 0'; return; }
-            cont.innerHTML = carrito.map((it, i) => `
-                <div class="flex justify-between items-center bg-gray-50 p-2 rounded-2xl"><span class="text-xs truncate w-1/2">${it.nombre}</span>
-                <div class="flex items-center gap-2"><button onclick="modCarrito(${i},-1)" class="w-8 h-8 rounded-full border">-</button><b>${it.can}</b><button onclick="modCarrito(${i},1)" class="w-8 h-8 rounded-full bg-primary text-white">+</button></div></div>`).join('');
-            totalT.innerText = fmt(carrito.reduce((s, it) => s + (it.venta * it.can), 0));
-        }
-        function modCarrito(i, d) { carrito[i].can += d; if(carrito[i].can<=0) carrito.splice(i,1); renderCarrito(); }
-        function renderizarDashboard() {
-            const sel = document.getElementById('dash-mes');
-            const meses = [...new Set(historialVentas.map(v => v.fechaIso.substring(0,7)))].sort().reverse();
-            if(sel.innerHTML == "" && meses.length) sel.innerHTML = meses.map(m => `<option value="${m}">${m}</option>`).join('');
-            const filtradas = historialVentas.filter(v => v.fechaIso.startsWith(sel.value));
-            const ing = filtradas.reduce((s,v) => s + v.total, 0);
-            document.getElementById('dash-summary').innerHTML = `<div class="col-span-2 bg-primary p-6 rounded-3xl text-white shadow-xl"><p class="text-xs opacity-70 font-bold">Ventas Mes</p><p class="text-4xl font-black">${fmt(ing)}</p></div>`;
-        }
+        const fmt = (v) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(v || 0);
+
         function cambiarVista(v) {
             ['dashboard', 'catalogo', 'venta', 'rutas', 'historial'].forEach(x => document.getElementById('view-'+x).classList.add('hidden'));
             document.getElementById('view-'+v).classList.remove('hidden');
@@ -333,6 +364,7 @@
             document.getElementById('nav-'+v).classList.replace('inactive','active');
             if(v === 'rutas') renderizarRuta();
         }
+
         function abrirModalProducto() { document.getElementById('modal-producto').classList.remove('hidden'); }
         function cerrarModalProducto() { document.getElementById('modal-producto').classList.add('hidden'); }
         function guardarProductoNube() {
@@ -340,7 +372,6 @@
             const id = n.replace(/\s+/g, '_').toLowerCase();
             db.collection("productos").doc(id).set({id, nombre: n, costo: parseInt(document.getElementById('prod-costo').value), venta: parseInt(document.getElementById('prod-venta').value), ganancia: parseInt(document.getElementById('prod-venta').value) - parseInt(document.getElementById('prod-costo').value)}).then(cerrarModalProducto);
         }
-        const fmt = (v) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(v || 0);
 
         inicializarApp(); cambiarVista('dashboard');
     </script>
