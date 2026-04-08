@@ -62,9 +62,10 @@
             </div>
             <select id="dash-mes" onchange="renderizarDashboard()" class="bg-white border-none rounded-xl text-sm font-bold text-primary focus:ring-0 shadow-sm py-3 px-4 outline-none"></select>
         </div>
+        
         <div id="dash-summary" class="grid grid-cols-2 gap-4 mb-6"></div>
         
-        <div id="dash-semanal" class="mb-8"></div>
+        <div id="dash-semanal" class="mb-8 space-y-3"></div>
 
         <section class="mb-8 space-y-6">
             <div class="bg-white p-5 rounded-3xl shadow-sm" id="dash-top-clientes"></div>
@@ -74,14 +75,14 @@
     <main id="view-catalogo" class="pt-24 px-6 max-w-2xl mx-auto hidden">
         <div class="flex justify-between items-start mb-6">
             <div>
-                <p class="text-[10px] uppercase tracking-widest text-gray-400 mb-1 font-bold">Inventario en Nube</p>
+                <p class="text-[10px] uppercase tracking-widest text-gray-400 mb-1 font-bold">Inventario Dinámico</p>
                 <h1 class="text-4xl font-extrabold tracking-tight">Catálogo</h1>
             </div>
             <div class="flex gap-2">
-                <button onclick="abrirModalCategorias()" class="bg-blue-50 text-primary p-3 rounded-2xl shadow-sm active:scale-95 transition-transform">
+                <button onclick="abrirModalCategorias()" class="bg-blue-50 text-primary p-3 rounded-2xl shadow-sm active:scale-95 transition-transform flex items-center justify-center">
                     <span class="material-symbols-outlined">style</span>
                 </button>
-                <button onclick="abrirModalProducto()" class="bg-primary text-white p-3 rounded-2xl shadow-lg active:scale-95 transition-transform">
+                <button onclick="abrirModalProducto()" class="bg-primary text-white p-3 rounded-2xl shadow-lg active:scale-95 transition-transform flex items-center justify-center">
                     <span class="material-symbols-outlined">add</span>
                 </button>
             </div>
@@ -97,12 +98,13 @@
         
         <div id="carrito-contenedor" class="bg-white p-4 rounded-3xl space-y-3 shadow-sm min-h-[100px]"></div>
         
-        <div class="space-y-3">
-            <input id="nombre-cliente" type="text" placeholder="Nombre del Cliente" class="w-full h-14 px-4 bg-white rounded-2xl border-none shadow-sm outline-none">
-            <input id="costo-delivery-input" type="number" placeholder="Costo Delivery / Envío ($)" class="w-full h-14 px-4 bg-white rounded-2xl border-none shadow-sm outline-none">
+        <div class="space-y-4">
+            <input id="nombre-cliente" type="text" placeholder="Nombre del Cliente (Opcional)" class="w-full h-14 px-4 bg-white rounded-2xl border-none shadow-sm outline-none font-bold text-[#191c1e]">
             
-            <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm space-y-3">
-                <div class="flex justify-between items-center">
+            <input id="costo-delivery-input" type="number" placeholder="Costo Delivery / Envío ($)" class="w-full h-14 px-4 bg-white rounded-2xl border-none shadow-sm outline-none">
+
+            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
+                <div class="flex justify-between items-center mb-2">
                     <p class="text-[10px] font-bold uppercase text-gray-400">¿Hago yo el reparto?</p>
                     <label class="switch">
                         <input type="checkbox" id="check-hago-reparto" onchange="toggleInputsReparto()">
@@ -119,9 +121,9 @@
                 </div>
             </div>
 
-            <button onclick="confirmarVenta()" class="w-full py-4 bg-primary text-white font-bold text-lg rounded-2xl shadow-lg active:scale-95 transition-transform">Confirmar Venta</button>
+            <button id="btn-confirmar-venta" onclick="confirmarVenta()" class="w-full py-4 bg-primary text-white font-bold text-lg rounded-2xl shadow-lg active:scale-95 transition-transform">Confirmar Venta</button>
             <button id="btn-whatsapp-post-venta" onclick="enviarWhatsAppUltimaVenta()" class="hidden w-full py-4 bg-[#25D366] text-white font-bold text-lg rounded-2xl shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-3">
-                <span>Enviar Detalle WhatsApp</span>
+                <span>Enviar Recibo WhatsApp</span>
                 <span class="material-symbols-outlined">chat</span>
             </button>
         </div>
@@ -173,10 +175,13 @@
                 <button onclick="editarLogisticaActual()" class="text-primary font-bold text-[10px] uppercase underline bg-blue-50 px-2 py-1 rounded-lg">Editar Datos</button>
             </div>
 
-            <div class="flex justify-between items-center">
-                <button onclick="eliminarVentaActual()" class="text-error font-bold text-xs">Eliminar</button>
-                <button onclick="compartirPorWhatsApp()" class="bg-[#25D366] text-white px-4 py-2 rounded-xl font-bold text-xs">WhatsApp</button>
-                <div class="text-right"><span class="text-xs font-bold block opacity-40">Total</span><span class="text-3xl font-extrabold text-primary" id="modal-total"></span></div>
+            <div class="flex justify-between items-center mt-2">
+                <button onclick="eliminarVentaActual()" class="text-error font-bold text-xs bg-red-50 px-3 py-2 rounded-lg">Borrar</button>
+                <button onclick="compartirPorWhatsApp()" class="bg-[#25D366] text-white px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">chat</span> WhatsApp</button>
+                <div class="text-right">
+                    <span class="text-[10px] font-bold uppercase block text-gray-400">Total Venta</span>
+                    <span class="text-3xl font-extrabold text-primary" id="modal-total"></span>
+                </div>
             </div>
         </div>
     </div>
@@ -186,7 +191,7 @@
             <h2 class="font-extrabold text-xl mb-4">Gestionar Categorías</h2>
             
             <div class="flex gap-2 mb-4">
-                <input id="nueva-cat-input" type="text" placeholder="Ej: Pescados, Postres..." class="w-full bg-gray-100 p-3 rounded-xl border-none outline-none text-sm font-bold">
+                <input id="nueva-cat-input" type="text" placeholder="Ej: Vinos, Ofertas..." class="w-full bg-gray-100 p-3 rounded-xl border-none outline-none text-sm font-bold">
                 <button onclick="crearCategoria()" class="bg-primary text-white px-4 rounded-xl font-bold text-sm">Crear</button>
             </div>
 
@@ -243,8 +248,6 @@
         let catalogoApp = [], carrito = [], historialVentas = [], categoriasApp = [], idVentaAbierta = null, ultimaVentaRealizada = null;
 
         function inicializarApp() {
-            document.getElementById('fecha-reparto').valueAsDate = new Date();
-            
             // Sincronizar Categorías
             db.collection("categorias").orderBy("nombre").onSnapshot((snap) => {
                 categoriasApp = [];
@@ -255,16 +258,16 @@
             });
 
             // Sincronizar Catálogo
-            db.collection("productos").orderBy("nombre").onSnapshot(s => {
-                catalogoApp = []; s.forEach(doc => catalogoApp.push(doc.data()));
+            db.collection("productos").orderBy("nombre").onSnapshot((snap) => {
+                catalogoApp = []; snap.forEach(doc => catalogoApp.push(doc.data()));
                 renderizarCatalogo();
-                renderizarDashboard(); 
+                renderizarDashboard();
             });
 
             // Sincronizar Ventas
-            db.collection("ventas").orderBy("idVenta", "desc").onSnapshot(snap => {
+            db.collection("ventas").orderBy("idVenta", "desc").onSnapshot((snap) => {
                 historialVentas = []; snap.forEach(doc => historialVentas.push(doc.data()));
-                renderizarHistorial();
+                aplicarFiltroFechas();
                 renderizarDashboard();
                 if(idVentaAbierta) abrirModal(idVentaAbierta);
             });
@@ -273,7 +276,7 @@
         // --- SISTEMA DE CATEGORÍAS ---
         function actualizarSelectCategorias() {
             const select = document.getElementById('prod-categoria');
-            select.innerHTML = categoriasApp.length ? categoriasApp.map(c => `<option value="${c.nombre}">${c.nombre}</option>`).join('') : '<option value="Sin Categoría">Sin Categoría</option>';
+            select.innerHTML = categoriasApp.length ? categoriasApp.map(c => `<option value="${c.nombre}">${c.nombre}</option>`).join('') : '<option value="OTRO">Sin Categoría</option>';
         }
 
         function abrirModalCategorias() {
@@ -306,11 +309,13 @@
             const val = input.value.trim().toUpperCase();
             if(!val) return;
             const id = val.replace(/\s+/g, '_').toLowerCase() + '_' + Date.now().toString().slice(-4);
-            db.collection("categorias").doc(id).set({nombre: val}).then(() => { input.value = ''; });
+            db.collection("categorias").doc(id).set({nombre: val}).then(() => {
+                input.value = '';
+            });
         }
 
         function borrarCategoria(id) {
-            if(confirm("¿Eliminar categoría? Los productos de esta no se borrarán.")) {
+            if(confirm("¿Eliminar categoría? Los productos de esta quedarán en 'Sin Categoría'.")) {
                 db.collection("categorias").doc(id).delete();
             }
         }
@@ -326,9 +331,13 @@
                 agrupados[cat].push(p);
             });
 
-            // Orden según lo que tengas en la base de datos de categorías
+            // Ordenamos primero según las categorías registradas en la DB
             const ordenCats = categoriasApp.map(c => c.nombre);
-            Object.keys(agrupados).forEach(c => { if(!ordenCats.includes(c)) ordenCats.push(c); });
+            
+            // Si hay productos con categorías viejas/borradas, las mostramos al final
+            Object.keys(agrupados).forEach(c => {
+                if(!ordenCats.includes(c)) ordenCats.push(c);
+            });
 
             let html = '';
             ordenCats.forEach(cat => {
@@ -347,7 +356,7 @@
                                     <p class="text-primary font-black text-lg">${fmt(p.venta)}</p>
                                     <p class="text-[9px] text-gray-400">COSTO: ${fmt(p.costo)}</p>
                                 </div>
-                                <button onclick="addCarrito('${p.id}')" class="bg-blue-50 text-primary w-12 h-12 rounded-2xl flex items-center justify-center active:scale-95 transition-transform">
+                                <button onclick="addCarrito('${p.id}')" class="bg-blue-50 text-primary w-12 h-12 rounded-2xl flex items-center justify-center active:bg-primary active:text-white transition-colors">
                                     <span class="material-symbols-outlined">add_shopping_cart</span>
                                 </button>
                             </div>
@@ -408,7 +417,7 @@
             }).then(cerrarModalProducto);
         }
 
-        // --- FUNCIONES CARRITO Y VENTAS ---
+        // --- FUNCIONES CARRITO Y VENTA ---
         function toggleInputsReparto() {
             const check = document.getElementById('check-hago-reparto');
             const container = document.getElementById('inputs-reparto');
@@ -436,7 +445,7 @@
             carrito.forEach((it, i) => {
                 t += (it.venta * it.can);
                 h += `
-                <div class="flex justify-between items-center bg-gray-50 p-3 rounded-2xl mb-2">
+                <div class="flex justify-between items-center bg-gray-50 p-3 rounded-2xl">
                     <span class="font-bold text-sm truncate w-1/2">${it.nombre}</span>
                     <div class="flex items-center gap-3">
                         <button onclick="modCarrito(${i},-1)" class="w-8 h-8 rounded-full border bg-white flex items-center justify-center">-</button>
@@ -481,22 +490,25 @@
             });
         }
 
-        // --- DASHBOARD ---
+        // --- DASHBOARD MENSUAL Y SEMANAL (CORREGIDO Y BLINDADO) ---
         function renderizarDashboard() {
             const sel = document.getElementById('dash-mes');
             const meses = [...new Set(historialVentas.map(v => v.fechaIso.substring(0,7)))].sort().reverse();
             if(sel.innerHTML == "" && meses.length) sel.innerHTML = meses.map(m => `<option value="${m}">${m}</option>`).join('');
             
             const mSel = sel.value;
+            if(!mSel) return;
+
             const filtradas = historialVentas.filter(v => v.fechaIso.startsWith(mSel));
             
             let totalV = 0, totalC = 0, totalD = 0;
-            let semanas = {};
+            let semanasMap = {}; // Mapa para agrupar por semana usando ISO date (ej. "2026-04-06")
 
             filtradas.forEach(v => {
                 totalV += v.total;
                 totalD += (v.costoDelivery || 0);
                 
+                // Calcular costo de los productos de esta venta
                 let cP = 0;
                 v.items.forEach(it => {
                     let p = catalogoApp.find(cp => cp.nombre === it.nombre);
@@ -504,22 +516,40 @@
                 });
                 totalC += cP;
 
-                // CÁLCULO SEMANAL
+                // --- LÓGICA SEMANAL BLINDADA ---
+                // Parseamos la fecha ISO ('YYYY-MM-DD') de forma segura
                 let [y, m, d] = v.fechaIso.split('-');
                 let dateObj = new Date(y, m - 1, d);
+                
+                // Buscar el lunes de esa semana
                 let day = dateObj.getDay(); 
                 let diff = dateObj.getDate() - day + (day === 0 ? -6 : 1);
-                let startOfWeek = new Date(dateObj.setDate(diff));
+                
+                // Creamos un nuevo objeto Date para el Lunes
+                let startOfWeek = new Date(dateObj.getTime());
+                startOfWeek.setDate(diff);
+                
+                // Generamos una llave ISO (YYYY-MM-DD) para poder ordenarlas matemáticamente después
+                let isoMondayKey = startOfWeek.toISOString().split('T')[0];
+                
+                // String bonito para mostrar en pantalla (ej: "06 abr")
                 let strLunes = startOfWeek.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' });
-                let key = `Semana del ${strLunes}`;
 
-                if(!semanas[key]) semanas[key] = { ventas: 0, costos: 0, envios: 0 };
-                semanas[key].ventas += v.total;
-                semanas[key].costos += cP;
-                semanas[key].envios += (v.costoDelivery || 0);
+                if(!semanasMap[isoMondayKey]) {
+                    semanasMap[isoMondayKey] = { 
+                        label: `Semana del ${strLunes}`, 
+                        ventas: 0, 
+                        costos: 0, 
+                        envios: 0 
+                    };
+                }
+                
+                semanasMap[isoMondayKey].ventas += v.total;
+                semanasMap[isoMondayKey].costos += cP;
+                semanasMap[isoMondayKey].envios += (v.costoDelivery || 0);
             });
 
-            // Resumen Mensual
+            // 1. Inyectar Resumen Mensual
             document.getElementById('dash-summary').innerHTML = `
                 <div class="col-span-2 bg-primary p-6 rounded-3xl text-white shadow-xl">
                     <p class="text-xs opacity-70 uppercase font-bold tracking-widest">Ingresos Mes</p>
@@ -534,35 +564,43 @@
                     <p class="text-lg font-bold">${fmt(totalD)}</p>
                 </div>
                 <div class="col-span-2 bg-secondary p-5 rounded-3xl text-white shadow-lg flex justify-between items-center">
-                    <span class="font-bold">Utilidad Mensual</span>
+                    <span class="font-bold">Utilidad Neta</span>
                     <span class="text-2xl font-black">${fmt(totalV - totalC - totalD)}</span>
                 </div>`;
 
-            // Resumen Semanal
-            let hSem = '<h4 class="text-xs font-bold text-gray-400 uppercase mb-3 mt-2">Rendimiento Semanal</h4>';
-            Object.keys(semanas).forEach(k => {
-                let s = semanas[k];
-                let util = s.ventas - s.costos - s.envios;
-                hSem += `
-                <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-secondary flex justify-between items-center mb-2">
-                    <div>
-                        <p class="font-bold text-sm text-[#191c1e]">${k}</p>
-                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Ventas: ${fmt(s.ventas)}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-[10px] font-bold text-gray-400 uppercase">Utilidad</p>
-                        <p class="font-black text-secondary text-sm">${fmt(util)}</p>
-                    </div>
-                </div>`;
-            });
-            document.getElementById('dash-semanal').innerHTML = Object.keys(semanas).length ? hSem : '';
+            // 2. Inyectar Resumen Semanal (Ordenado de más nuevo a más viejo)
+            // Extraemos las llaves (las fechas ISO), las ordenamos alfabéticamente y las invertimos
+            let sortedWeeksKeys = Object.keys(semanasMap).sort().reverse();
             
-            // Top Clientes
+            let hSem = '';
+            if(sortedWeeksKeys.length > 0) {
+                hSem += '<h4 class="text-xs font-bold text-gray-400 uppercase mb-3 mt-4">Rendimiento Semanal</h4>';
+                
+                sortedWeeksKeys.forEach(isoKey => {
+                    let s = semanasMap[isoKey];
+                    let utilLimpia = s.ventas - s.costos - s.envios;
+                    
+                    hSem += `
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-secondary flex justify-between items-center mb-2 active:scale-95 transition-transform">
+                        <div>
+                            <p class="font-bold text-sm text-[#191c1e]">${s.label}</p>
+                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Ingresos: ${fmt(s.ventas)}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] font-bold text-gray-400 uppercase">Utilidad</p>
+                            <p class="font-black text-secondary text-sm">${fmt(utilLimpia)}</p>
+                        </div>
+                    </div>`;
+                });
+            }
+            document.getElementById('dash-semanal').innerHTML = hSem;
+            
+            // 3. Inyectar Top Clientes
             let sCli = {}; filtradas.forEach(v => sCli[v.cliente] = (sCli[v.cliente] || 0) + 1);
             let tCli = Object.entries(sCli).sort((a,b) => b[1] - a[1]).slice(0,3);
             let hCli = '<h4 class="text-xs font-bold text-gray-400 uppercase mb-3">Top Clientes</h4>';
             tCli.forEach(c => hCli += `<div class="flex justify-between text-sm py-2 border-b last:border-0"><span class="font-bold">${c[0]}</span><b class="text-primary">${c[1]} pedidos</b></div>`);
-            document.getElementById('dash-top-clientes').innerHTML = tCli.length ? hCli : '<p class="text-sm text-gray-400">Aún no hay clientes.</p>';
+            document.getElementById('dash-top-clientes').innerHTML = tCli.length ? hCli : '<p class="text-sm text-gray-400">Aún no hay clientes este mes.</p>';
         }
 
         // --- HISTORIAL Y MODAL DE VENTAS ---
